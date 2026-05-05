@@ -6,6 +6,7 @@
 
 namespace FacturaScripts\Plugins\ColorInclusivo;
 
+use FacturaScripts\Core\Base\AssetManager;
 use FacturaScripts\Core\Template\InitClass;
 use FacturaScripts\Core\Where;
 use FacturaScripts\Dinamic\Model\Role;
@@ -17,8 +18,14 @@ final class Init extends InitClass
 
     public function init(): void
     {
-        // No se cargan extensiones; el CSS se inyecta vía
-        // View/MenuTemplate/CssAfter y View/MenuBghTemplate/CssAfter
+        // Registramos el endpoint dinámico ColorInclusivoCss como asset CSS
+        // para que se inyecte automáticamente en TODAS las páginas a través
+        // del bloque {% for css in assetManager.get('css') %} del master template.
+        // Más robusto que depender del despliegue de View/MenuTemplate/CssAfter.
+        if (class_exists(AssetManager::class)) {
+            $base = defined('FS_ROUTE') ? rtrim(\FS_ROUTE, '/') . '/' : '';
+            AssetManager::add('css', $base . 'ColorInclusivoCss');
+        }
     }
 
     public function uninstall(): void
