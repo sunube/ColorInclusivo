@@ -96,7 +96,8 @@ class ConfigColorInclusivo extends Controller
         $this->config->subrayado_danger = (bool) $this->request->get('subrayado_danger', false);
 
         if ($this->config->save()) {
-            Tools::log()->notice('Configuración guardada correctamente');
+            $this->config->applyToCustomCss();
+            Tools::log()->notice('Configuración guardada. Si no ves los cambios pulsa Ctrl+F5 (recarga sin caché).');
         } else {
             Tools::log()->error('Error al guardar la configuración');
         }
@@ -127,7 +128,8 @@ class ConfigColorInclusivo extends Controller
         }
 
         if ($this->config->save()) {
-            Tools::log()->notice('Preset aplicado: ' . $preset['label']);
+            $this->config->applyToCustomCss();
+            Tools::log()->notice('Preset aplicado: ' . $preset['label'] . '. Pulsa Ctrl+F5 para refrescar la caché del navegador.');
         } else {
             Tools::log()->error('Error al aplicar el preset');
         }
@@ -146,7 +148,8 @@ class ConfigColorInclusivo extends Controller
         $this->config->preset = 'defecto';
 
         if ($this->config->save()) {
-            Tools::log()->notice('Configuración restablecida a valores por defecto');
+            $this->config->applyToCustomCss();
+            Tools::log()->notice('Configuración restablecida a valores por defecto. Pulsa Ctrl+F5.');
         } else {
             Tools::log()->error('Error al restablecer la configuración');
         }

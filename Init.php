@@ -6,11 +6,11 @@
 
 namespace FacturaScripts\Plugins\ColorInclusivo;
 
-use FacturaScripts\Core\Base\AssetManager;
 use FacturaScripts\Core\Template\InitClass;
 use FacturaScripts\Core\Where;
 use FacturaScripts\Dinamic\Model\Role;
 use FacturaScripts\Dinamic\Model\RoleAccess;
+use FacturaScripts\Plugins\ColorInclusivo\Model\ColorInclusivoConfig;
 
 final class Init extends InitClass
 {
@@ -18,23 +18,34 @@ final class Init extends InitClass
 
     public function init(): void
     {
-        // Registramos el endpoint dinámico ColorInclusivoCss como asset CSS
-        // para que se inyecte automáticamente en TODAS las páginas a través
-        // del bloque {% for css in assetManager.get('css') %} del master template.
-        // Más robusto que depender del despliegue de View/MenuTemplate/CssAfter.
-        if (class_exists(AssetManager::class)) {
-            $base = defined('FS_ROUTE') ? rtrim(\FS_ROUTE, '/') . '/' : '';
-            AssetManager::add('css', $base . 'ColorInclusivoCss');
-        }
+        // Nada en init() para no modificar custom.css en cada request.
+        // La regeneración se hace cuando el usuario guarda la configuración o
+        // cuando se actualiza el plugin (ver update()).
     }
 
     public function uninstall(): void
     {
+        // Al desinstalar, eliminar nuestro bloque del custom.css dejándolo limpio.
+        try {
+            $config = ColorInclusivoConfig::getConfig();
+            $config->activo = false; // genera vacío al aplicar
+            $config->applyToCustomCss();
+        } catch (\Throwable $e) {
+            // ignorar
+        }
     }
 
     public function update(): void
     {
         $this->createRoleForPlugin();
+
+        // Regenerar custom.css con la configuración actual.
+        try {
+            $config = ColorInclusivoConfig::getConfig();
+            $config->applyToCustomCss();
+        } catch (\Throwable $e) {
+            // ignorar - puede que la tabla aún no exista al primer install
+        }
     }
 
     private function createRoleForPlugin(): void

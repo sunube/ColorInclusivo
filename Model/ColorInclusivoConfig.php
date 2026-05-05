@@ -275,6 +275,58 @@ class ColorInclusivoConfig extends ModelClass
     }
 
     /**
+     * Marcadores que delimitan nuestra sección dentro de custom.css
+     */
+    private const MARKER_START = '/* ===== ColorInclusivo START - generado automaticamente, no editar ===== */';
+    private const MARKER_END   = '/* ===== ColorInclusivo END ===== */';
+
+    /**
+     * Escribe el CSS dinámico dentro de Dinamic/Assets/CSS/custom.css.
+     * Si ya hay una sección de ColorInclusivo la reemplaza; el resto del archivo
+     * (CSS personalizado por el usuario) se conserva intacto.
+     */
+    public function applyToCustomCss(): bool
+    {
+        $base = defined('FS_FOLDER') ? \FS_FOLDER : '';
+        if (empty($base)) {
+            return false;
+        }
+
+        $candidates = [
+            $base . '/Dinamic/Assets/CSS/custom.css',
+            $base . '/MyFiles/Public/colorinclusivo.css',
+        ];
+
+        // Trabajamos con custom.css si existe / es escribible su carpeta.
+        $cssPath = $candidates[0];
+        if (!file_exists($cssPath) && !is_dir(dirname($cssPath))) {
+            return false;
+        }
+        if (!file_exists($cssPath)) {
+            @file_put_contents($cssPath, "");
+        }
+        if (!is_writable($cssPath)) {
+            return false;
+        }
+
+        $existing = (string) @file_get_contents($cssPath);
+
+        // Quitar la sección anterior si existía.
+        $pattern = '/\s*' . preg_quote(self::MARKER_START, '/') . '.*?' . preg_quote(self::MARKER_END, '/') . '\s*/s';
+        $existing = preg_replace($pattern, "\n", $existing);
+        $existing = rtrim((string) $existing) . "\n";
+
+        // Generar nuevo bloque solo si está activo.
+        if ($this->activo) {
+            $existing .= "\n" . self::MARKER_START . "\n"
+                . $this->generateCss()
+                . "\n" . self::MARKER_END . "\n";
+        }
+
+        return false !== @file_put_contents($cssPath, $existing);
+    }
+
+    /**
      * Convierte #RRGGBB a "r, g, b" para Bootstrap --bs-*-rgb
      */
     public static function hexToRgb(string $hex): string
