@@ -1,0 +1,501 @@
+{% extends 'Master/MenuBghTemplate.html.twig' %}
+
+{% block body %}
+    {{ parent() }}
+    <div class="container-fluid py-4">
+        <h1 class="h3 mb-4">
+            <i class="fa-solid fa-eye-low-vision me-2"></i> ColorInclusivo - Accesibilidad de colores
+        </h1>
+
+        <div class="alert alert-info">
+            <i class="fa-solid fa-circle-info me-2"></i>
+            <strong>¿Para qué sirve este plugin?</strong><br>
+            Permite personalizar todos los colores que FacturaScripts utiliza para resaltar información:
+            filas vencidas, totales en rojo, alertas de éxito, etc. Está pensado para usuarios con
+            <strong>daltonismo</strong> (protanopía, deuteranopía, tritanopía) o
+            <strong>visión reducida</strong>, pero también es útil si quieres adaptar la interfaz a tu marca.<br>
+            Los cambios se aplican <strong>globalmente</strong> a toda la empresa y a todos los usuarios.
+        </div>
+
+        {# ═══════════ Activación + Presets ═══════════ #}
+        <div class="card shadow-sm mb-4">
+            <div class="card-header d-flex align-items-center">
+                <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Presets rápidos
+                <button type="button" class="btn btn-sm btn-outline-info ms-auto rounded-circle"
+                        data-bs-toggle="modal" data-bs-target="#helpPresets" title="Ayuda">
+                    <i class="fa-solid fa-question"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">
+                    Aplica una de estas paletas optimizadas para distintos tipos de daltonismo.
+                    Después puedes ajustar los colores manualmente abajo.
+                </p>
+                <form action="ConfigColorInclusivo" method="post" class="d-inline">
+                    {{ formToken() }}
+                    <input type="hidden" name="action" value="apply-preset">
+                    <div class="row g-2">
+                        {% for key, preset in fsc.presets %}
+                            <div class="col-md-4 col-lg-3">
+                                <button type="submit" name="preset_key" value="{{ key }}"
+                                        class="btn w-100 h-100 text-start {{ fsc.config.preset == key ? 'btn-primary' : 'btn-outline-secondary' }}"
+                                        title="{{ preset.desc }}">
+                                    <strong>{{ preset.label }}</strong>
+                                    <br>
+                                    <small class="opacity-75">{{ preset.desc | slice(0, 70) }}{{ preset.desc | length > 70 ? '...' : '' }}</small>
+                                    <div class="mt-2">
+                                        {% for cf in ['color_danger','color_warning','color_success','color_info','color_primary','color_secondary'] %}
+                                            <span style="display:inline-block;width:20px;height:20px;border-radius:3px;border:1px solid #00000020;background:{{ preset.colors[cf] }};vertical-align:middle;margin-right:2px;"></span>
+                                        {% endfor %}
+                                    </div>
+                                </button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </form>
+                <div class="mt-3">
+                    <form action="ConfigColorInclusivo" method="post" class="d-inline">
+                        {{ formToken() }}
+                        <input type="hidden" name="action" value="reset">
+                        <button type="submit" class="btn btn-sm btn-outline-warning"
+                                onclick="return confirm('¿Restablecer todos los colores a los valores Bootstrap originales?');">
+                            <i class="fa-solid fa-rotate-left me-1"></i> Restablecer a valores por defecto
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <form action="ConfigColorInclusivo" method="post" onsubmit="animateSpinner('add')">
+            {{ formToken() }}
+            <input type="hidden" name="action" value="save">
+            <input type="hidden" name="preset" value="{{ fsc.config.preset }}">
+
+            {# ═══════════ Activación general ═══════════ #}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <i class="fa-solid fa-power-off me-1"></i> Activación
+                </div>
+                <div class="card-body">
+                    <div class="form-check form-switch">
+                        <input type="checkbox" name="activo" value="1" class="form-check-input" id="activo"
+                               {{ fsc.config.activo ? 'checked' : '' }}>
+                        <label class="form-check-label" for="activo">
+                            <strong>Activar personalización de colores</strong>
+                        </label>
+                    </div>
+                    <small class="text-muted">
+                        Si lo desactivas, FacturaScripts usará los colores Bootstrap originales (no se aplica ningún cambio).
+                        El plugin sigue instalado y la configuración se conserva.
+                    </small>
+                </div>
+            </div>
+
+            {# ═══════════ Filas de tabla ═══════════ #}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex align-items-center">
+                    <i class="fa-solid fa-table me-1"></i> Filas de tablas (lo más importante)
+                    <button type="button" class="btn btn-sm btn-outline-info ms-auto rounded-circle"
+                            data-bs-toggle="modal" data-bs-target="#helpFilas" title="Ayuda">
+                        <i class="fa-solid fa-question"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="form-check form-switch mb-3">
+                        <input type="checkbox" name="aplicar_filas" value="1" class="form-check-input" id="aplicar_filas"
+                               {{ fsc.config.aplicar_filas ? 'checked' : '' }}>
+                        <label class="form-check-label" for="aplicar_filas">Aplicar a filas de tablas</label>
+                    </div>
+
+                    {# DANGER (filas rojas) #}
+                    <div class="row g-3 align-items-end mb-3 p-2 rounded"
+                         style="background: {{ fsc.config.row_danger_bg }}; color: {{ fsc.config.row_danger_text }};">
+                        <div class="col-md-3">
+                            <strong>Rojo (peligro)</strong><br>
+                            <small>Filas vencidas, errores, totales negativos</small>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label mb-0 small">Fondo</label>
+                            <input type="color" name="row_danger_bg" class="form-control form-control-color"
+                                   value="{{ fsc.config.row_danger_bg }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label mb-0 small">Texto</label>
+                            <input type="color" name="row_danger_text" class="form-control form-control-color"
+                                   value="{{ fsc.config.row_danger_text }}">
+                        </div>
+                        <div class="col-md-5">
+                            <em>Ejemplo: Factura vencida con saldo pendiente</em>
+                        </div>
+                    </div>
+
+                    {# WARNING (filas amarillas) #}
+                    <div class="row g-3 align-items-end mb-3 p-2 rounded"
+                         style="background: {{ fsc.config.row_warning_bg }}; color: {{ fsc.config.row_warning_text }};">
+                        <div class="col-md-3">
+                            <strong>Amarillo (aviso)</strong><br>
+                            <small>Próximo a vencer, borrador, pendiente de revisión</small>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label mb-0 small">Fondo</label>
+                            <input type="color" name="row_warning_bg" class="form-control form-control-color"
+                                   value="{{ fsc.config.row_warning_bg }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label mb-0 small">Texto</label>
+                            <input type="color" name="row_warning_text" class="form-control form-control-color"
+                                   value="{{ fsc.config.row_warning_text }}">
+                        </div>
+                        <div class="col-md-5">
+                            <em>Ejemplo: Albarán pendiente de facturar</em>
+                        </div>
+                    </div>
+
+                    {# SUCCESS (filas verdes) #}
+                    <div class="row g-3 align-items-end mb-3 p-2 rounded"
+                         style="background: {{ fsc.config.row_success_bg }}; color: {{ fsc.config.row_success_text }};">
+                        <div class="col-md-3">
+                            <strong>Verde (éxito)</strong><br>
+                            <small>Pagado, cobrado, aprobado, completado</small>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label mb-0 small">Fondo</label>
+                            <input type="color" name="row_success_bg" class="form-control form-control-color"
+                                   value="{{ fsc.config.row_success_bg }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label mb-0 small">Texto</label>
+                            <input type="color" name="row_success_text" class="form-control form-control-color"
+                                   value="{{ fsc.config.row_success_text }}">
+                        </div>
+                        <div class="col-md-5">
+                            <em>Ejemplo: Factura pagada al 100%</em>
+                        </div>
+                    </div>
+
+                    {# INFO (filas azules) #}
+                    <div class="row g-3 align-items-end mb-3 p-2 rounded"
+                         style="background: {{ fsc.config.row_info_bg }}; color: {{ fsc.config.row_info_text }};">
+                        <div class="col-md-3">
+                            <strong>Azul (información)</strong><br>
+                            <small>Procesando, en curso, informativo</small>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label mb-0 small">Fondo</label>
+                            <input type="color" name="row_info_bg" class="form-control form-control-color"
+                                   value="{{ fsc.config.row_info_bg }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label mb-0 small">Texto</label>
+                            <input type="color" name="row_info_text" class="form-control form-control-color"
+                                   value="{{ fsc.config.row_info_text }}">
+                        </div>
+                        <div class="col-md-5">
+                            <em>Ejemplo: Documento en proceso de revisión</em>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# ═══════════ Texto coloreado ═══════════ #}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex align-items-center">
+                    <i class="fa-solid fa-font me-1"></i> Textos coloreados (precios, importes, totales)
+                    <button type="button" class="btn btn-sm btn-outline-info ms-auto rounded-circle"
+                            data-bs-toggle="modal" data-bs-target="#helpTextos" title="Ayuda">
+                        <i class="fa-solid fa-question"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="form-check form-switch mb-3">
+                        <input type="checkbox" name="aplicar_textos" value="1" class="form-check-input" id="aplicar_textos"
+                               {{ fsc.config.aplicar_textos ? 'checked' : '' }}>
+                        <label class="form-check-label" for="aplicar_textos">Aplicar a textos en columnas</label>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Texto rojo (.text-danger)</label>
+                            <input type="color" name="text_danger" class="form-control form-control-color"
+                                   value="{{ fsc.config.text_danger }}">
+                            <small class="text-muted">Precios a 0, importes negativos, errores</small><br>
+                            <span style="color: {{ fsc.config.text_danger }}; font-size: 1.1rem;"><strong>-156,00 €</strong> &nbsp; ¡Atención!</span>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Texto amarillo (.text-warning)</label>
+                            <input type="color" name="text_warning" class="form-control form-control-color"
+                                   value="{{ fsc.config.text_warning }}">
+                            <small class="text-muted">Avisos, valores fuera de rango</small><br>
+                            <span style="color: {{ fsc.config.text_warning }}; font-size: 1.1rem;"><strong>Pendiente</strong></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Texto verde (.text-success)</label>
+                            <input type="color" name="text_success" class="form-control form-control-color"
+                                   value="{{ fsc.config.text_success }}">
+                            <small class="text-muted">Pagado, OK, beneficio</small><br>
+                            <span style="color: {{ fsc.config.text_success }}; font-size: 1.1rem;"><strong>+1.250,00 €</strong></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Texto azul (.text-info)</label>
+                            <input type="color" name="text_info" class="form-control form-control-color"
+                                   value="{{ fsc.config.text_info }}">
+                            <small class="text-muted">Información, hipervínculos secundarios</small><br>
+                            <span style="color: {{ fsc.config.text_info }}; font-size: 1.1rem;"><strong>Info</strong></span>
+                        </div>
+                    </div>
+
+                    <h6 class="mt-4">Refuerzo accesibilidad</h6>
+                    <div class="form-check">
+                        <input type="checkbox" name="negrita_danger" value="1" class="form-check-input" id="negrita_danger"
+                               {{ fsc.config.negrita_danger ? 'checked' : '' }}>
+                        <label class="form-check-label" for="negrita_danger">
+                            Aplicar <strong>negrita</strong> automática a los textos rojos
+                            <small class="text-muted d-block">Útil si el cambio de color no es suficiente</small>
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" name="subrayado_danger" value="1" class="form-check-input" id="subrayado_danger"
+                               {{ fsc.config.subrayado_danger ? 'checked' : '' }}>
+                        <label class="form-check-label" for="subrayado_danger">
+                            Aplicar <u>subrayado</u> automático a los textos rojos
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            {# ═══════════ Variables principales (color del tema) ═══════════ #}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex align-items-center">
+                    <i class="fa-solid fa-palette me-1"></i> Color del tema (botones, badges, alertas)
+                    <button type="button" class="btn btn-sm btn-outline-info ms-auto rounded-circle"
+                            data-bs-toggle="modal" data-bs-target="#helpTema" title="Ayuda">
+                        <i class="fa-solid fa-question"></i>
+                    </button>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Estos son los colores principales del tema. Los activadores de abajo controlan a qué elementos se aplican.
+                    </p>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-2">
+                            <label class="form-label">Danger</label>
+                            <input type="color" name="color_danger" class="form-control form-control-color"
+                                   value="{{ fsc.config.color_danger }}">
+                            <button type="button" class="btn btn-sm w-100 mt-1" style="background: {{ fsc.config.color_danger }}; color: white;">Botón</button>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Warning</label>
+                            <input type="color" name="color_warning" class="form-control form-control-color"
+                                   value="{{ fsc.config.color_warning }}">
+                            <button type="button" class="btn btn-sm w-100 mt-1" style="background: {{ fsc.config.color_warning }}; color: black;">Botón</button>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Success</label>
+                            <input type="color" name="color_success" class="form-control form-control-color"
+                                   value="{{ fsc.config.color_success }}">
+                            <button type="button" class="btn btn-sm w-100 mt-1" style="background: {{ fsc.config.color_success }}; color: white;">Botón</button>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Info</label>
+                            <input type="color" name="color_info" class="form-control form-control-color"
+                                   value="{{ fsc.config.color_info }}">
+                            <button type="button" class="btn btn-sm w-100 mt-1" style="background: {{ fsc.config.color_info }}; color: black;">Botón</button>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Primary</label>
+                            <input type="color" name="color_primary" class="form-control form-control-color"
+                                   value="{{ fsc.config.color_primary }}">
+                            <button type="button" class="btn btn-sm w-100 mt-1" style="background: {{ fsc.config.color_primary }}; color: white;">Botón</button>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Secondary</label>
+                            <input type="color" name="color_secondary" class="form-control form-control-color"
+                                   value="{{ fsc.config.color_secondary }}">
+                            <button type="button" class="btn btn-sm w-100 mt-1" style="background: {{ fsc.config.color_secondary }}; color: white;">Botón</button>
+                        </div>
+                    </div>
+
+                    <h6>¿A qué elementos se aplican estos colores?</h6>
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input type="checkbox" name="aplicar_botones" value="1" class="form-check-input" id="aplicar_botones"
+                                       {{ fsc.config.aplicar_botones ? 'checked' : '' }}>
+                                <label class="form-check-label" for="aplicar_botones">
+                                    <i class="fa-solid fa-square me-1"></i> Botones
+                                    <small class="text-muted d-block">btn-danger, btn-warning, etc.</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input type="checkbox" name="aplicar_badges" value="1" class="form-check-input" id="aplicar_badges"
+                                       {{ fsc.config.aplicar_badges ? 'checked' : '' }}>
+                                <label class="form-check-label" for="aplicar_badges">
+                                    <i class="fa-solid fa-tag me-1"></i> Badges/Etiquetas
+                                    <small class="text-muted d-block">Estados de documentos</small>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input type="checkbox" name="aplicar_alertas" value="1" class="form-check-input" id="aplicar_alertas"
+                                       {{ fsc.config.aplicar_alertas ? 'checked' : '' }}>
+                                <label class="form-check-label" for="aplicar_alertas">
+                                    <i class="fa-solid fa-bell me-1"></i> Alertas
+                                    <small class="text-muted d-block">Mensajes flash, banners</small>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {# ═══════════ Vista previa ═══════════ #}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <i class="fa-solid fa-eye me-1"></i> Vista previa
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">Esta es una vista previa simulada. Guarda los cambios para verlos en toda la aplicación.</p>
+
+                    <h6>Tabla de ejemplo:</h6>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr><th>#</th><th>Cliente</th><th>Fecha</th><th>Estado</th><th>Importe</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr style="background: {{ fsc.config.row_danger_bg }}; color: {{ fsc.config.row_danger_text }};">
+                                <td>F001</td><td>Cliente A</td><td>15/03/2024</td><td>Vencida</td>
+                                <td style="color: {{ fsc.config.text_danger }};{% if fsc.config.negrita_danger %}font-weight:700;{% endif %}{% if fsc.config.subrayado_danger %}text-decoration:underline;{% endif %}">-1.500,00 €</td>
+                            </tr>
+                            <tr style="background: {{ fsc.config.row_warning_bg }}; color: {{ fsc.config.row_warning_text }};">
+                                <td>F002</td><td>Cliente B</td><td>10/04/2026</td><td>Por vencer</td>
+                                <td>500,00 €</td>
+                            </tr>
+                            <tr style="background: {{ fsc.config.row_success_bg }}; color: {{ fsc.config.row_success_text }};">
+                                <td>F003</td><td>Cliente C</td><td>05/04/2026</td><td>Pagada</td>
+                                <td style="color: {{ fsc.config.text_success }};">1.250,00 €</td>
+                            </tr>
+                            <tr style="background: {{ fsc.config.row_info_bg }}; color: {{ fsc.config.row_info_text }};">
+                                <td>F004</td><td>Cliente D</td><td>01/05/2026</td><td>Procesando</td>
+                                <td>800,00 €</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h6 class="mt-3">Botones de ejemplo:</h6>
+                    <button type="button" class="btn btn-sm me-2" style="background: {{ fsc.config.color_danger }}; color: white; border-color: {{ fsc.config.color_danger }};">Eliminar</button>
+                    <button type="button" class="btn btn-sm me-2" style="background: {{ fsc.config.color_warning }}; color: black; border-color: {{ fsc.config.color_warning }};">Editar</button>
+                    <button type="button" class="btn btn-sm me-2" style="background: {{ fsc.config.color_success }}; color: white; border-color: {{ fsc.config.color_success }};">Guardar</button>
+                    <button type="button" class="btn btn-sm me-2" style="background: {{ fsc.config.color_info }}; color: black; border-color: {{ fsc.config.color_info }};">Info</button>
+                    <button type="button" class="btn btn-sm me-2" style="background: {{ fsc.config.color_primary }}; color: white; border-color: {{ fsc.config.color_primary }};">Primary</button>
+                </div>
+            </div>
+
+            {# Botón guardar #}
+            <div class="text-end mb-4">
+                <button type="submit" class="btn btn-primary btn-lg btn-spin-action">
+                    <i class="fa-solid fa-save me-1"></i> Guardar configuración
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {# ═══════════════════════════════════════════════ #}
+    {# MODALES DE AYUDA                                #}
+    {# ═══════════════════════════════════════════════ #}
+
+    <div class="modal fade" id="helpPresets" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title"><i class="fa-solid fa-wand-magic-sparkles me-2"></i> Presets para daltonismo</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Cada preset es una paleta de colores optimizada para un tipo concreto de daltonismo o necesidad visual:</p>
+                    <ul>
+                        <li><strong>Por defecto:</strong> los colores estándar de Bootstrap. Usar para volver al origen.</li>
+                        <li><strong>Protanopía:</strong> dificultad para ver el rojo. Sustituye los rojos por naranjas oscuros y los verdes por azules.</li>
+                        <li><strong>Deuteranopía:</strong> el tipo más común. Dificultad para ver el verde. Reemplaza el verde por azul y oscurece el rojo.</li>
+                        <li><strong>Tritanopía:</strong> dificultad para ver el azul. Refuerza con tonos rosas y verdes.</li>
+                        <li><strong>Acromatopsia:</strong> sin percepción del color. Usa diferentes intensidades de gris.</li>
+                        <li><strong>Alto contraste:</strong> para visión reducida (no necesariamente daltonismo). Colores oscuros sobre fondos claros.</li>
+                    </ul>
+                    <p class="mb-0"><strong>Consejo:</strong> después de aplicar un preset, puedes ajustar manualmente cualquier color a continuación. El preset es solo el punto de partida.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="helpFilas" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title"><i class="fa-solid fa-table me-2"></i> Filas de tablas</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>FacturaScripts colorea ciertas filas de tablas para indicar estados:</p>
+                    <table class="table table-sm">
+                        <tr><td><span class="badge bg-danger">Rojo</span></td>
+                            <td>Facturas vencidas, errores, totales en negativo, líneas con problemas</td></tr>
+                        <tr><td><span class="badge bg-warning text-dark">Amarillo</span></td>
+                            <td>Documentos próximos a vencer, borradores, pendientes de revisión</td></tr>
+                        <tr><td><span class="badge bg-success">Verde</span></td>
+                            <td>Facturas pagadas, presupuestos aceptados, tareas completadas</td></tr>
+                        <tr><td><span class="badge bg-info">Azul</span></td>
+                            <td>Documentos en proceso, información neutra</td></tr>
+                    </table>
+                    <p><strong>Para cada fila puedes ajustar:</strong></p>
+                    <ul>
+                        <li><strong>Fondo:</strong> el color de fondo de la fila completa</li>
+                        <li><strong>Texto:</strong> el color del texto sobre ese fondo</li>
+                    </ul>
+                    <p>El contraste entre fondo y texto debe ser suficiente para que se lea bien. Si dudas, oscurece el texto y aclara el fondo.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="helpTextos" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title"><i class="fa-solid fa-font me-2"></i> Textos coloreados</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Algunas columnas muestran texto coloreado para destacar valores: precios a 0 en rojo, totales positivos en verde, etc.</p>
+                    <p>Estos colores son <strong>independientes</strong> de los colores de fila. Por ejemplo, una fila no roja puede tener una columna con texto rojo.</p>
+                    <p><strong>Refuerzo accesibilidad:</strong> Si el cambio de color no es suficiente para distinguir un valor importante (típicamente un precio en rojo), puedes activar <strong>negrita</strong> y/o <strong>subrayado</strong> automáticos sobre los textos rojos.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="helpTema" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title"><i class="fa-solid fa-palette me-2"></i> Color del tema</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Estos son los 6 colores principales que Bootstrap utiliza en toda la interfaz:</p>
+                    <ul>
+                        <li><strong>Danger:</strong> Botones de eliminar, alertas de error, badges de rechazo</li>
+                        <li><strong>Warning:</strong> Botones de advertencia, alertas de aviso</li>
+                        <li><strong>Success:</strong> Botones de guardar, alertas de éxito, badges de aprobado</li>
+                        <li><strong>Info:</strong> Botones de información, alertas neutras</li>
+                        <li><strong>Primary:</strong> Botón principal de cada formulario, links, elementos activos</li>
+                        <li><strong>Secondary:</strong> Botones secundarios, texto auxiliar</li>
+                    </ul>
+                    <p>Los activadores de la parte inferior te permiten controlar a qué elementos se aplican estos colores: botones, badges (etiquetas) y alertas.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

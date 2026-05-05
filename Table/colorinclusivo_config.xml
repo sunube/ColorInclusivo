@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<table>
+    <column>
+        <name>id</name>
+        <type>serial</type>
+        <null>NO</null>
+    </column>
+    <column>
+        <name>activo</name>
+        <type>boolean</type>
+        <default>true</default>
+    </column>
+    <column>
+        <name>preset</name>
+        <type>character varying(20)</type>
+        <default>'personalizado'</default>
+    </column>
+
+    <!-- Colores principales (variables Bootstrap bs) -->
+    <column>
+        <name>color_danger</name>
+        <type>character varying(20)</type>
+        <default>'#dc3545'</default>
+    </column>
+    <column>
+        <name>color_warning</name>
+        <type>character varying(20)</type>
+        <default>'#ffc107'</default>
+    </column>
+    <column>
+        <name>color_success</name>
+        <type>character varying(20)</type>
+        <default>'#198754'</default>
+    </column>
+    <column>
+        <name>color_info</name>
+        <type>character varying(20)</type>
+        <default>'#0dcaf0'</default>
+    </column>
+    <column>
+        <name>color_primary</name>
+        <type>character varying(20)</type>
+        <default>'#0d6efd'</default>
+    </column>
+    <column>
+        <name>color_secondary</name>
+        <type>character varying(20)</type>
+        <default>'#6c757d'</default>
+    </column>
+
+    <!-- Fondos de filas de tabla (table-X) -->
+    <column>
+        <name>row_danger_bg</name>
+        <type>character varying(20)</type>
+        <default>'#f8d7da'</default>
+    </column>
+    <column>
+        <name>row_danger_text</name>
+        <type>character varying(20)</type>
+        <default>'#58151c'</default>
+    </column>
+    <column>
+        <name>row_warning_bg</name>
+        <type>character varying(20)</type>
+        <default>'#fff3cd'</default>
+    </column>
+    <column>
+        <name>row_warning_text</name>
+        <type>character varying(20)</type>
+        <default>'#664d03'</default>
+    </column>
+    <column>
+        <name>row_success_bg</name>
+        <type>character varying(20)</type>
+        <default>'#d1e7dd'</default>
+    </column>
+    <column>
+        <name>row_success_text</name>
+        <type>character varying(20)</type>
+        <default>'#0a3622'</default>
+    </column>
+    <column>
+        <name>row_info_bg</name>
+        <type>character varying(20)</type>
+        <default>'#cff4fc'</default>
+    </column>
+    <column>
+        <name>row_info_text</name>
+        <type>character varying(20)</type>
+        <default>'#055160'</default>
+    </column>
+
+    <!-- Texto coloreado dentro de columnas (text-X) -->
+    <column>
+        <name>text_danger</name>
+        <type>character varying(20)</type>
+        <default>'#dc3545'</default>
+    </column>
+    <column>
+        <name>text_warning</name>
+        <type>character varying(20)</type>
+        <default>'#cc9a06'</default>
+    </column>
+    <column>
+        <name>text_success</name>
+        <type>character varying(20)</type>
+        <default>'#198754'</default>
+    </column>
+    <column>
+        <name>text_info</name>
+        <type>character varying(20)</type>
+        <default>'#087990'</default>
+    </column>
+
+    <!-- Aplicar a botones también -->
+    <column>
+        <name>aplicar_botones</name>
+        <type>boolean</type>
+        <default>true</default>
+    </column>
+    <column>
+        <name>aplicar_badges</name>
+        <type>boolean</type>
+        <default>true</default>
+    </column>
+    <column>
+        <name>aplicar_alertas</name>
+        <type>boolean</type>
+        <default>true</default>
+    </column>
+    <column>
+        <name>aplicar_filas</name>
+        <type>boolean</type>
+        <default>true</default>
+    </column>
+    <column>
+        <name>aplicar_textos</name>
+        <type>boolean</type>
+        <default>true</default>
+    </column>
+
+    <!-- Refuerzo accesibilidad (negrita, subrayado, iconos) -->
+    <column>
+        <name>negrita_danger</name>
+        <type>boolean</type>
+        <default>false</default>
+    </column>
+    <column>
+        <name>subrayado_danger</name>
+        <type>boolean</type>
+        <default>false</default>
+    </column>
+
+    <constraint>
+        <name>colorinclusivo_config_pkey</name>
+        <type>PRIMARY KEY (id)</type>
+    </constraint>
+</table>

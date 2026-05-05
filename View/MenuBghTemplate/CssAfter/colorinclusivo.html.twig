@@ -1,0 +1,3 @@
+{# ColorInclusivo - inyecta el CSS dinámico generado por el controlador ColorInclusivoCss.
+   Se sirve en cada carga de página vía un endpoint público para que los cambios sean inmediatos. #}
+<link rel="stylesheet" href="ColorInclusivoCss?v={{ 'now' | date('YmdHis') }}"/>
