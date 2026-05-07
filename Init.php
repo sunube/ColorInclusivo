@@ -18,9 +18,46 @@ final class Init extends InitClass
 
     public function init(): void
     {
-        // Nada en init() para no modificar custom.css en cada request.
-        // La regeneración se hace cuando el usuario guarda la configuración o
-        // cuando se actualiza el plugin (ver update()).
+        // FacturaScripts regenera Dinamic/Assets/CSS/custom.css periódicamente
+        // (al desplegar assets, activar/desactivar plugins, etc.). Si nuestro
+        // bloque ha desaparecido lo restauramos al vuelo. Como solo leemos el
+        // archivo y escribimos cuando falta el marcador, el coste es mínimo.
+        $this->ensureCustomCss();
+    }
+
+    private function ensureCustomCss(): void
+    {
+        $base = defined('FS_FOLDER') ? \FS_FOLDER : '';
+        if (empty($base)) {
+            return;
+        }
+
+        $cssPath = $base . '/Dinamic/Assets/CSS/custom.css';
+        if (!file_exists($cssPath)) {
+            return;
+        }
+
+        $content = @file_get_contents($cssPath);
+        if (false === $content) {
+            return;
+        }
+
+        // Si nuestro marcador ya está, todo correcto.
+        if (strpos($content, 'ColorInclusivo START') !== false) {
+            return;
+        }
+
+        // Falta. Regenerar.
+        try {
+            $config = ColorInclusivoConfig::getConfig();
+            // No reescribir si está desactivado y no había bloque (no hay nada que poner).
+            if (!$config->activo) {
+                return;
+            }
+            $config->applyToCustomCss();
+        } catch (\Throwable $e) {
+            // ignorar - puede que la tabla aún no exista al primer install
+        }
     }
 
     public function uninstall(): void
